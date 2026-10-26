@@ -1,0 +1,140 @@
+import java.util.*;
+
+public class LibrarySystem {
+
+    static class Book {
+        final int id;
+        final String title;
+        int available;
+        int borrowed;
+        final LinkedList<String> waitingPatrons = new LinkedList<>();
+
+        Book(int id, String title, int copies) {
+            this.id = id;
+            this.title = title;
+            this.available = copies;
+            this.borrowed = 0;
+        }
+
+        String status() {
+            return "Available " + available + ", borrowed " + borrowed;
+        }
+    }
+
+    private final Map<Integer, Book> books = new HashMap<>();
+    private final Set<String> reservationKeys = new HashSet<>();
+
+    public LibrarySystem() {
+        books.put(1, new Book(1, "Java Basics", 1));
+        books.put(2, new Book(2, "Algorithms", 0));
+        books.put(3, new Book(3, "Databases", 1)); // third title: not specified in the MP, chosen here
+    }
+
+    public String find(int id) {
+        Book b = books.get(id);
+        if (b == null) return "Book not found";
+        return b.title + ": " + b.status();
+    }
+
+    public String borrow(int id, String patron) {
+        Book b = books.get(id);
+        if (b == null) return "Book not found";
+        if (b.available == 0) return "No copies available";
+        b.available--;
+        b.borrowed++;
+        return "Borrowed by " + patron + ": " + b.status();
+    }
+
+    public String reserve(int id, String patron) {
+        Book b = books.get(id);
+        if (b == null) return "Book not found";
+        if (b.available > 0) return "Copies are available; borrow instead";
+        String key = id + ":" + patron;
+        if (!reservationKeys.add(key)) return "Duplicate rejected";
+        b.waitingPatrons.add(patron);
+        return patron + " added to waiting list. Waiting: " + String.join(", ", b.waitingPatrons);
+    }
+
+    public String returnBook(int id) {
+        Book b = books.get(id);
+        if (b == null) return "Book not found";
+        if (b.borrowed == 0) return "No borrowed copies to return";
+
+        if (b.waitingPatrons.isEmpty()) {
+            b.available++;
+            b.borrowed--;
+            return "Returned: " + b.status();
+        }
+
+        // Copy goes straight to the earliest waiting patron (FIFO).
+        String next = b.waitingPatrons.poll();
+        reservationKeys.remove(id + ":" + next);
+        String waiting = b.waitingPatrons.isEmpty()
+                ? "none waiting"
+                : String.join(", ", b.waitingPatrons) + " waiting";
+        return "Copy assigned to " + next + "; " + b.status() + "; " + waiting;
+    }
+
+    public String showWaiting(int id) {
+        Book b = books.get(id);
+        if (b == null) return "Book not found";
+        if (b.waitingPatrons.isEmpty()) return "No one is waiting";
+        StringBuilder sb = new StringBuilder("Waiting for " + b.title + ": ");
+        Iterator<String> it = b.waitingPatrons.iterator();
+        while (it.hasNext()) {
+            sb.append(it.next());
+            if (it.hasNext()) sb.append(", ");
+        }
+        return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        LibrarySystem library = new LibrarySystem();
+        Scanner in = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\nMenu: 1 Borrow | 2 Reserve | 3 Return | 4 Find | 5 Show waiting | 0 Exit");
+            System.out.print("Choice: ");
+            String choice = in.nextLine().trim();
+
+            switch (choice) {
+                case "1": {
+                    int id = readId(in);
+                    System.out.print("Patron: ");
+                    System.out.println(library.borrow(id, in.nextLine().trim()));
+                    break;
+                }
+                case "2": {
+                    int id = readId(in);
+                    System.out.print("Patron: ");
+                    System.out.println(library.reserve(id, in.nextLine().trim()));
+                    break;
+                }
+                case "3":
+                    System.out.println(library.returnBook(readId(in)));
+                    break;
+                case "4":
+                    System.out.println(library.find(readId(in)));
+                    break;
+                case "5":
+                    System.out.println(library.showWaiting(readId(in)));
+                    break;
+                case "0":
+                    System.out.println("Goodbye.");
+                    in.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+
+    private static int readId(Scanner in) {
+        System.out.print("Book ID: ");
+        try {
+            return Integer.parseInt(in.nextLine().trim());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+}
