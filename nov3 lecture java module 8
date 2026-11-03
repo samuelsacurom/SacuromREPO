@@ -587,3 +587,9 @@ ON student_management_db.*
 TO 'srms_user'@'localhost';
 
  
+CREATE USER IF NOT EXISTS 'srms_user'@'localhost'
+IDENTIFIED BY 'SrmsLab2026!';
+ 
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON student_management_db.*
+TO 'srms_user'@'localhost';
