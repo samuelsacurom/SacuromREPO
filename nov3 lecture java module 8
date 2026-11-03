@@ -1,0 +1,431 @@
+CREATE DATABASE IF NOT EXISTS java_school_db;
+ 
+USE java_school_db;
+ 
+CREATE TABLE IF NOT EXISTS students (
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    student_name VARCHAR(100) NOT NULL,
+    course VARCHAR(100) NOT NULL,
+    age INT NOT NULL
+);
+CREATE USER IF NOT EXISTS 'java_student'@'l... by Hadji Tejuco
+Hadji Tejuco
+10:40 AM
+CREATE USER IF NOT EXISTS 'java_student'@'localhost'
+IDENTIFIED BY 'ClassDemo123!';
+ 
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON java_school_db.*
+TO 'java_student'@'localhost';
+INSERT INTO students (student_name, course,... by Hadji Tejuco
+Hadji Tejuco
+10:45 AM
+INSERT INTO students (student_name, course, age)
+VALUES
+('Maria Santos', 'BSCS', 20),
+('Juan Dela Cruz', 'BSIT', 21),
+('Ana Reyes', 'BSCS', 19);
+SELECT * FROM students; by Hadji Tejuco
+Hadji Tejuco
+10:47 AM
+SELECT * FROM students;
+<dependency> <groupId>com.mysql</groupId> <... by Hadji Tejuco
+Hadji Tejuco
+10:51 AM
+<dependency>
+<groupId>com.mysql</groupId>
+<artifactId>mysql-connector-j</artifactId>
+<version>9.5.0</version>
+</dependency>
+package jdbcswingtutorial;   import java.... by Hadji Tejuco
+Hadji Tejuco
+10:54 AM
+
+package jdbcswingtutorial;
+ 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+ 
+public class DBConnection {
+ 
+    private static final String URL =
+        "jdbc:mysql://localhost:3306/java_school_db";
+ 
+    private static final String USER = "java_student";
+    private static final String PASSWORD = "ClassDemo123!";
+ 
+    public static Connection getConnection()
+            throws SQLException {
+ 
+        return DriverManager.getConnection(
+            URL, USER, PASSWORD
+        );
+    }
+}
+
+package jdbcswingtutorial;   import java.... by Hadji Tejuco
+Hadji Tejuco
+11:00 AM
+
+package jdbcswingtutorial;
+ 
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.swing.*;
+ 
+public class ConnectionTestGUI extends JFrame {
+ 
+    private JButton btnConnect;
+ 
+    public ConnectionTestGUI() {
+        setTitle("JDBC Connection Test");
+        setSize(350, 180);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+ 
+        btnConnect = new JButton("Test Connection");
+        add(btnConnect);
+ 
+        btnConnect.addActionListener(e -> testConnection());
+    }
+ 
+    private void testConnection() {
+        try (Connection conn =
+                DBConnection.getConnection()) {
+ 
+            JOptionPane.showMessageDialog(this,
+                "Database Connected Successfully!");
+ 
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Connection Failed: " + ex.getMessage());
+        }
+    }
+ 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() ->
+            new ConnectionTestGUI().setVisible(true)
+        );
+    }
+}
+
+package jdbcswingtutorial;   import java.... by Hadji Tejuco
+Hadji Tejuco
+11:05 AM
+
+package jdbcswingtutorial;
+ 
+import java.awt.GridLayout;
+import java.sql.*;
+import javax.swing.*;
+ 
+public class AddStudentGUI extends JFrame {
+ 
+    JTextField txtName = new JTextField();
+    JTextField txtCourse = new JTextField();
+    JTextField txtAge = new JTextField();
+    JButton btnSave = new JButton("Save Student");
+ 
+    public AddStudentGUI() {
+        setTitle("Add Student");
+        setSize(400, 250);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ 
+        setLayout(new GridLayout(4, 2, 10, 10));
+ 
+        add(new JLabel("Student Name:"));
+        add(txtName);
+ 
+        add(new JLabel("Course:"));
+        add(txtCourse);
+ 
+        add(new JLabel("Age:"));
+        add(txtAge);
+ 
+        add(new JLabel(""));
+        add(btnSave);
+ 
+        btnSave.addActionListener(e -> saveStudent());
+    }
+ 
+    private void saveStudent() {
+ 
+        String name = txtName.getText().trim();
+        String course = txtCourse.getText().trim();
+ 
+        if (name.isEmpty() || course.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Please complete all fields.");
+            return;
+        }
+ 
+        int age;
+ 
+        try {
+            age = Integer.parseInt(txtAge.getText().trim());
+ 
+            if (age <= 0 || age > 120) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Enter a valid age between 1 and 120.");
+            return;
+        }
+ 
+        String sql = "INSERT INTO students " +
+                     "(student_name, course, age) " +
+                     "VALUES (?, ?, ?)";
+ 
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps =
+                 conn.prepareStatement(sql)) {
+ 
+            ps.setString(1, name);
+            ps.setString(2, course);
+            ps.setInt(3, age);
+ 
+            int rows = ps.executeUpdate();
+ 
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Student saved successfully!");
+ 
+                txtName.setText("");
+                txtCourse.setText("");
+                txtAge.setText("");
+            }
+ 
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Database Error: " + ex.getMessage());
+        }
+    }
+ 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() ->
+            new AddStudentGUI().setVisible(true)
+        );
+    }
+}
+
+package jdbcswingtutorial;   import java.... by Hadji Tejuco
+Hadji Tejuco
+11:16 AM
+
+package jdbcswingtutorial;
+ 
+import java.awt.BorderLayout;
+import java.sql.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+ 
+public class ViewStudentsGUI extends JFrame {
+ 
+    DefaultTableModel model = new DefaultTableModel(
+        new String[]{"ID", "Name", "Course", "Age"}, 0
+    ) {
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return false;
+        }
+    };
+ 
+    JTable table = new JTable(model);
+    JButton btnLoad = new JButton("Load Students");
+ 
+    public ViewStudentsGUI() {
+        setTitle("Student Records");
+        setSize(650, 400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ 
+        setLayout(new BorderLayout());
+ 
+        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(btnLoad, BorderLayout.SOUTH);
+ 
+        btnLoad.addActionListener(e -> loadStudents());
+        loadStudents();
+    }
+ 
+    private void loadStudents() {
+ 
+        String sql = "SELECT * FROM students " +
+                     "ORDER BY student_id";
+ 
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps =
+                 conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+ 
+            model.setRowCount(0);
+ 
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                    rs.getInt("student_id"),
+                    rs.getString("student_name"),
+                    rs.getString("course"),
+                    rs.getInt("age")
+                });
+            }
+ 
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error: " + ex.getMessage());
+        }
+    }
+ 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() ->
+            new ViewStudentsGUI().setVisible(true)
+        );
+    }
+}
+
+package jdbcswingtutorial;   import java.... by Hadji Tejuco
+Hadji Tejuco
+11:23 AM
+
+package jdbcswingtutorial;
+ 
+import java.awt.GridLayout;
+import java.sql.*;
+import javax.swing.*;
+ 
+public class UpdateStudentGUI extends JFrame {
+ 
+    JTextField txtID = new JTextField();
+    JTextField txtName = new JTextField();
+    JTextField txtCourse = new JTextField();
+    JTextField txtAge = new JTextField();
+ 
+    JButton btnSearch = new JButton("Search");
+    JButton btnUpdate = new JButton("Update");
+ 
+    public UpdateStudentGUI() {
+        setTitle("Update Student");
+        setSize(450, 300);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new GridLayout(5, 2, 10, 10));
+ 
+        add(new JLabel("Student ID:"));
+        add(txtID);
+ 
+        add(new JLabel("Name:"));
+        add(txtName);
+ 
+        add(new JLabel("Course:"));
+        add(txtCourse);
+ 
+        add(new JLabel("Age:"));
+        add(txtAge);
+ 
+        add(btnSearch);
+        add(btnUpdate);
+ 
+        btnSearch.addActionListener(e -> searchStudent());
+        btnUpdate.addActionListener(e -> updateStudent());
+    }
+ 
+    private int getStudentID() {
+        int id = Integer.parseInt(txtID.getText().trim());
+        if (id <= 0) throw new NumberFormatException();
+        return id;
+    }
+ 
+    private void searchStudent() {
+        String sql = "SELECT * FROM students WHERE student_id=?";
+ 
+        try {
+            int id = getStudentID();
+ 
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps =
+                     conn.prepareStatement(sql)) {
+ 
+                ps.setInt(1, id);
+ 
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        txtName.setText(
+                            rs.getString("student_name"));
+                        txtCourse.setText(
+                            rs.getString("course"));
+                        txtAge.setText(
+                            String.valueOf(rs.getInt("age")));
+                    } else {
+                        txtName.setText("");
+                        txtCourse.setText("");
+                        txtAge.setText("");
+                        JOptionPane.showMessageDialog(this,
+                            "Student not found.");
+                    }
+                }
+            }
+ 
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Enter a valid student ID.");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error: " + ex.getMessage());
+        }
+    }
+ 
+    private void updateStudent() {
+        String sql = "UPDATE students SET " +
+                     "student_name=?, course=?, age=? " +
+                     "WHERE student_id=?";
+ 
+        try {
+            int id = getStudentID();
+            int age = Integer.parseInt(txtAge.getText().trim());
+            String name = txtName.getText().trim();
+            String course = txtCourse.getText().trim();
+ 
+            if (name.isEmpty() || course.isEmpty()
+                    || age <= 0 || age > 120) {
+                throw new IllegalArgumentException(
+                    "Check the name, course, and age.");
+            }
+ 
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps =
+                     conn.prepareStatement(sql)) {
+ 
+                ps.setString(1, name);
+                ps.setString(2, course);
+                ps.setInt(3, age);
+                ps.setInt(4, id);
+ 
+                int rows = ps.executeUpdate();
+ 
+                JOptionPane.showMessageDialog(this,
+                    rows > 0 ? "Student updated!"
+                             : "Student not found.");
+            }
+ 
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this,
+                "ID and age must be valid numbers.");
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage());
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error: " + ex.getMessage());
+        }
+    }
+ 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() ->
+            new UpdateStudentGUI().setVisible(true)
+        );
+    }
+}
+
+has context menu
